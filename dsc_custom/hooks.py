@@ -5,6 +5,19 @@ app_description = "Personalizaciones ERPNext DSC"
 app_email = "dcordero1978@gmail.com"
 app_license = "mit"
 
+# JS personalizado por DocType
+doctype_js = {
+    "Payment Entry": "public/js/payment_entry.js",
+}
+
+# Fixtures — Custom Fields
+fixtures = [
+    {
+        "doctype": "Custom Field",
+        "filters": [["module", "=", "DSC Custom"]],
+    }
+]
+
 # Apps
 # ------------------
 

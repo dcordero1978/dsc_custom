@@ -1,0 +1,48 @@
+[
+  {
+    "doctype": "Custom Field",
+    "name": "Payment Entry-dsc_retencion_section",
+    "dt": "Payment Entry",
+    "module": "DSC Custom",
+    "label": "Retenciones Nicaragua",
+    "fieldname": "dsc_retencion_section",
+    "fieldtype": "Section Break",
+    "insert_after": "paid_amount",
+    "collapsible": 0,
+    "hidden": 1
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Payment Entry-dsc_retencion_ir",
+    "dt": "Payment Entry",
+    "module": "DSC Custom",
+    "label": "Retener IR 2% (DGI)",
+    "fieldname": "dsc_retencion_ir",
+    "fieldtype": "Check",
+    "insert_after": "Payment Entry-dsc_retencion_section",
+    "description": "Marca si el cliente presentó constancia de retención IR 2%. Se calculará sobre el total de la factura.",
+    "default": "0"
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Payment Entry-dsc_retencion_col",
+    "dt": "Payment Entry",
+    "module": "DSC Custom",
+    "label": "",
+    "fieldname": "dsc_retencion_col",
+    "fieldtype": "Column Break",
+    "insert_after": "Payment Entry-dsc_retencion_ir"
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Payment Entry-dsc_retencion_alma",
+    "dt": "Payment Entry",
+    "module": "DSC Custom",
+    "label": "Retener ALMA 1% (Municipal)",
+    "fieldname": "dsc_retencion_alma",
+    "fieldtype": "Check",
+    "insert_after": "Payment Entry-dsc_retencion_col",
+    "description": "Marca si el cliente retiene el 1% de impuesto municipal (ALMA). Se calculará sobre el total de la factura.",
+    "default": "0"
+  }
+]
