@@ -1,20 +1,27 @@
 // DSC Custom — Retenciones en Payment Entry (Nicaragua)
 //
-// Las tasas y las cuentas NO están en el código: se leen de "DSC Retencion Config"
-// (una por empresa), según la operación:
+// Las tasas, cuentas, monto mínimo y base de cálculo NO están en el código: se leen de
+// "DSC Retencion Config" (una por empresa), según la operación:
 //   Cobro = Receive + Customer  (el cliente le retiene a la empresa  -> cuenta de activo)
 //   Pago  = Pay + Supplier      (la empresa le retiene al proveedor  -> cuenta de pasivo)
 //
-// Base de cálculo: subtotal SIN IVA y con el descuento aplicado (net total) de cada factura
-// referenciada, en proporción a lo asignado en el pago.
+// El cálculo lo hace el servidor (dsc_custom.api.calcular_retenciones), el mismo que valida
+// los documentos al Validar. El monto mínimo se evalúa POR FACTURA.
 //
 // Mecánica contable en el Payment Entry:
 //   Asignado a facturas = bruto (no cambia)
 //   Pagado/recibido     = bruto - retenciones
 //   Deducciones         = retenciones (positivas en Cobro, NEGATIVAS en Pago)
+//
+// Documentos (se exigen en el servidor al Validar, no al Guardar):
+//   Cobro: constancia del cliente si se retiene.
+//   Pago:  exoneración del proveedor si la factura alcanza el mínimo y no se retiene;
+//          si se retiene, la constancia emitida es opcional.
 
 const DSC_CONCEPTOS = ["IR", "ALMA"];
 const DSC_CAMPO = { IR: "dsc_retencion_ir", ALMA: "dsc_retencion_alma" };
+const DSC_DOCUMENTO = { IR: "dsc_documento_ir", ALMA: "dsc_documento_alma" };
+const DSC_ENTIDAD = { IR: "DGI", ALMA: "alcaldía" };
 const DSC_SECCION = "dsc_retencion_section";
 const DSC_MARCA = "[DSC] "; // prefijo en la descripción de las deducciones que genera este script
 
@@ -45,6 +52,11 @@ function dsc_operacion(frm) {
 	return null;
 }
 
+function dsc_moneda(frm) {
+	const company = frm.doc.company && frappe.get_doc(":Company", frm.doc.company);
+	return (company && company.default_currency) || frm.doc.paid_from_account_currency;
+}
+
 async function dsc_cargar_reglas(frm) {
 	const operacion = dsc_operacion(frm);
 	if (!operacion || !frm.doc.company) return null;
@@ -65,20 +77,52 @@ async function dsc_preparar(frm) {
 	if (!frm.fields_dict[DSC_SECCION]) return;
 
 	const operacion = dsc_operacion(frm);
-	if (!operacion || frm.doc.docstatus !== 0) {
+	if (!operacion) {
 		frm.set_df_property(DSC_SECCION, "hidden", 1);
 		return;
 	}
 
+	// Documento ya validado: se muestra la sección solo si tiene algo que consultar.
+	if (frm.doc.docstatus !== 0) {
+		const tieneDatos = DSC_CONCEPTOS.some((c) => frm.doc[DSC_CAMPO[c]] || frm.doc[DSC_DOCUMENTO[c]]);
+		frm.set_df_property(DSC_SECCION, "hidden", tieneDatos ? 0 : 1);
+		return;
+	}
+
 	const cfg = await dsc_cargar_reglas(frm);
+	const moneda = dsc_moneda(frm);
 	let alguna = false;
 	for (const concepto of DSC_CONCEPTOS) {
 		const regla = cfg && cfg.reglas[concepto];
 		const campo = DSC_CAMPO[concepto];
+		const documento = DSC_DOCUMENTO[concepto];
 		frm.set_df_property(campo, "hidden", regla ? 0 : 1);
-		if (regla) {
-			frm.set_df_property(campo, "label", __("Retener {0} {1}%", [concepto, regla.tasa]));
-			alguna = true;
+		frm.set_df_property(documento, "hidden", regla ? 0 : 1);
+		if (!regla) continue;
+		alguna = true;
+
+		let etiqueta = __("Retener {0} {1}%", [concepto, regla.tasa]);
+		if (flt(regla.monto_minimo) > 0) {
+			etiqueta += " " + __("(facturas desde {0})", [format_currency(regla.monto_minimo, moneda)]);
+		}
+		frm.set_df_property(campo, "label", etiqueta);
+
+		if (operacion === "Cobro") {
+			frm.set_df_property(documento, "label", __("Constancia de retención {0} ({1})", [concepto, DSC_ENTIDAD[concepto]]));
+			frm.set_df_property(
+				documento,
+				"description",
+				__("PDF o imagen que entrega el cliente. Obligatoria al Validar si se marca la retención.")
+			);
+		} else {
+			frm.set_df_property(documento, "label", __("Exoneración o constancia {0} del proveedor", [concepto]));
+			frm.set_df_property(
+				documento,
+				"description",
+				__(
+					"PDF o imagen. Obligatoria al Validar si alguna factura alcanza el mínimo y NO se retiene (exoneración). Si se retiene, es opcional (constancia emitida)."
+				)
+			);
 		}
 	}
 	frm.set_df_property(DSC_SECCION, "hidden", alguna ? 0 : 1);
@@ -122,7 +166,7 @@ async function dsc_calcular(frm, operacion) {
 	// Solo se soporta pago en moneda de la empresa (tasas de cambio = 1).
 	if (flt(frm.doc.source_exchange_rate) !== 1 || flt(frm.doc.target_exchange_rate) !== 1) {
 		frappe.msgprint(__("Las retenciones automáticas solo funcionan cuando el pago es en la moneda de la empresa."));
-		await dsc_desmarcar(frm);
+		await dsc_desmarcar(frm, DSC_CONCEPTOS);
 		return;
 	}
 
@@ -137,10 +181,10 @@ async function dsc_calcular(frm, operacion) {
 	const bruto = (f) => flt(frm._dsc_bruto[f.name]);
 	const brutoTotal = filas.reduce((s, f) => s + bruto(f), 0);
 
-	const activos = DSC_CONCEPTOS.filter((c) => frm.doc[DSC_CAMPO[c]] && cfg.reglas[c]);
+	const marcados = DSC_CONCEPTOS.filter((c) => frm.doc[DSC_CAMPO[c]] && cfg.reglas[c]);
 
 	// Sin ninguna retención marcada: se deja el pago como estaba (bruto, sin nuestras deducciones).
-	if (!activos.length) {
+	if (!marcados.length) {
 		await dsc_reemplazar_deducciones(frm, []);
 		if (brutoTotal) dsc_fijar_montos(frm, filas, bruto, flt(brutoTotal, 2));
 		frm._dsc_bruto = null;
@@ -149,7 +193,7 @@ async function dsc_calcular(frm, operacion) {
 
 	if (!brutoTotal) {
 		frappe.msgprint(__("Primero indique la factura en la tabla de Referencias para poder calcular la retención."));
-		await dsc_desmarcar(frm);
+		await dsc_desmarcar(frm, marcados);
 		return;
 	}
 
@@ -161,12 +205,15 @@ async function dsc_calcular(frm, operacion) {
 			allocated_amount: bruto(f),
 		}));
 	const r = await frappe.call({
-		method: "dsc_custom.api.get_base_retencion",
-		args: { referencias: JSON.stringify(payload) },
+		method: "dsc_custom.api.calcular_retenciones",
+		args: { company: frm.doc.company, operacion, referencias: JSON.stringify(payload) },
 	});
-	const base = flt(r.message.base);
+	const conceptos = r.message.conceptos || {};
+	const moneda = dsc_moneda(frm);
+	const avisos = [];
+
 	if (r.message.ignoradas && r.message.ignoradas.length) {
-		frappe.msgprint(
+		avisos.push(
 			__("Estas referencias no son facturas de venta/compra y no entran en la base: {0}", [
 				r.message.ignoradas.join(", "),
 			])
@@ -175,42 +222,71 @@ async function dsc_calcular(frm, operacion) {
 
 	const signo = operacion === "Pago" ? -1 : 1;
 	const nuevas = [];
+	const sinMinimo = [];
 	let totalRetenido = 0;
-	activos.forEach((concepto) => {
-		const regla = cfg.reglas[concepto];
-		const monto = flt((base * regla.tasa) / 100, 2);
-		totalRetenido += monto;
+	marcados.forEach((concepto) => {
+		const res = conceptos[concepto];
+		const fuera = ((res && res.facturas) || []).filter((f) => !f.aplica);
+		if (fuera.length) {
+			avisos.push(
+				__("{0}: no alcanzan el mínimo de {1} y no se retienen: {2}", [
+					concepto,
+					format_currency(res.monto_minimo, moneda),
+					fuera.map((f) => `${f.factura} (${format_currency(f.valor, moneda)})`).join(", "),
+				])
+			);
+		}
+		if (!res || !flt(res.monto)) {
+			sinMinimo.push(concepto);
+			return;
+		}
+		totalRetenido += flt(res.monto);
 		nuevas.push({
-			account: regla.cuenta,
+			account: res.cuenta,
 			cost_center: cfg.cost_center,
-			amount: signo * monto,
-			description: `${DSC_MARCA}Retención ${concepto} ${regla.tasa}%`,
+			amount: signo * flt(res.monto),
+			description: `${DSC_MARCA}Retención ${concepto} ${res.tasa}%`,
 			_concepto: concepto,
-			_monto: monto,
+			_monto: flt(res.monto),
+			_base: flt(res.base),
 		});
 	});
+
+	// Conceptos marcados sin ninguna factura que alcance el mínimo: no hay retención que aplicar.
+	if (sinMinimo.length) {
+		await dsc_desmarcar(frm, sinMinimo);
+		avisos.push(__("Se desmarcó {0}: ninguna factura alcanza el monto mínimo.", [sinMinimo.join(", ")]));
+	}
 
 	await dsc_reemplazar_deducciones(frm, nuevas);
 	dsc_fijar_montos(frm, filas, bruto, flt(brutoTotal - totalRetenido, 2));
 
-	const moneda = frm.doc.paid_from_account_currency;
-	frappe.show_alert(
-		{
-			message: __("Base: {0}<br>{1}<hr>Neto a {2}: <b>{3}</b>", [
-				format_currency(base, moneda),
-				nuevas
-					.map((n) => `${n._concepto}: <b>${format_currency(n._monto, moneda)}</b>`)
-					.join("<br>"),
-				operacion === "Cobro" ? __("recibir") : __("pagar"),
-				format_currency(brutoTotal - totalRetenido, moneda),
-			]),
-			indicator: "blue",
-		},
-		7
-	);
+	if (avisos.length) {
+		frappe.msgprint({ title: __("Retenciones"), indicator: "blue", message: avisos.join("<br><br>") });
+	}
+
+	if (nuevas.length) {
+		frappe.show_alert(
+			{
+				message: __("{0}<hr>Neto a {1}: <b>{2}</b>", [
+					nuevas
+						.map(
+							(n) =>
+								`${n._concepto}: <b>${format_currency(n._monto, moneda)}</b> ` +
+								__("sobre {0}", [format_currency(n._base, moneda)])
+						)
+						.join("<br>"),
+					operacion === "Cobro" ? __("recibir") : __("pagar"),
+					format_currency(brutoTotal - totalRetenido, moneda),
+				]),
+				indicator: "blue",
+			},
+			7
+		);
+	}
 
 	// Aviso si el pago no cuadra. Se revisan las dos cosas: ERPNext puede dejar la diferencia
-	// en 0 y aun así tener monto sin asignar (así se escapó el doble descuento).
+	// en 0 y aun así tener monto sin asignar.
 	setTimeout(() => {
 		const dif = flt(frm.doc.difference_amount);
 		const sinAsignar = flt(frm.doc.unallocated_amount);
@@ -273,8 +349,8 @@ function dsc_fijar_montos(frm, filas, bruto, neto) {
 	frm.events.set_total_allocated_amount(frm);
 }
 
-async function dsc_desmarcar(frm) {
-	for (const concepto of DSC_CONCEPTOS) {
+async function dsc_desmarcar(frm, conceptos) {
+	for (const concepto of conceptos) {
 		if (frm.doc[DSC_CAMPO[concepto]]) await frm.set_value(DSC_CAMPO[concepto], 0);
 	}
 }

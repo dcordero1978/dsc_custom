@@ -24,9 +24,13 @@ fixtures = [
 ]
 
 # Margen sobre venta: se convierte a markup equivalente al guardar la Pricing Rule
+# Retenciones: exige el documento de respaldo al validar el Payment Entry
 doc_events = {
     "Pricing Rule": {
         "before_validate": "dsc_custom.pricing.convertir_margen_sobre_venta",
+    },
+    "Payment Entry": {
+        "before_submit": "dsc_custom.api.validar_documentos_retencion",
     },
 }
 

@@ -23,6 +23,12 @@ class DSCRetencionConfig(Document):
 			if not 0 < (r.tasa or 0) <= 100:
 				frappe.throw(_("{0}: la tasa debe ser mayor que 0 y no pasar de 100.").format(fila))
 
+			if (r.monto_minimo or 0) < 0:
+				frappe.throw(_("{0}: el monto mínimo no puede ser negativo (use 0 para no tener límite).").format(fila))
+
+			if not r.base_calculo:
+				r.base_calculo = "Subtotal sin IVA"
+
 			if r.activo:
 				clave = (r.operacion, r.concepto)
 				if clave in activas:

@@ -8,8 +8,10 @@
   "operacion",
   "concepto",
   "tasa",
+  "monto_minimo",
   "cuenta",
-  "activo"
+  "activo",
+  "base_calculo"
  ],
  "fields": [
   {
@@ -19,7 +21,7 @@
    "label": "Operaci\u00f3n",
    "options": "Cobro\nPago",
    "reqd": 1,
-   "columns": 2
+   "columns": 1
   },
   {
    "fieldname": "concepto",
@@ -28,7 +30,7 @@
    "label": "Concepto",
    "options": "IR\nALMA",
    "reqd": 1,
-   "columns": 2
+   "columns": 1
   },
   {
    "fieldname": "tasa",
@@ -37,6 +39,16 @@
    "label": "Tasa %",
    "reqd": 1,
    "columns": 1
+  },
+  {
+   "default": "0",
+   "description": "La factura entra en la base solo si su valor (seg\u00fan la Base de c\u00e1lculo) es igual o mayor que este monto. Se eval\u00faa por factura. 0 = sin l\u00edmite.",
+   "fieldname": "monto_minimo",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Monto m\u00ednimo",
+   "non_negative": 1,
+   "columns": 2
   },
   {
    "fieldname": "cuenta",
@@ -54,12 +66,21 @@
    "in_list_view": 1,
    "label": "Activo",
    "columns": 1
+  },
+  {
+   "default": "Subtotal sin IVA",
+   "description": "Valor de la factura que se usa para comparar el monto m\u00ednimo y para calcular la retenci\u00f3n. Subtotal sin IVA = neto con descuento aplicado.",
+   "fieldname": "base_calculo",
+   "fieldtype": "Select",
+   "label": "Base de c\u00e1lculo",
+   "options": "Subtotal sin IVA\nTotal con IVA",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-11-13 20:00:00.000000",
+ "modified": "2026-11-19 21:30:00.000000",
  "modified_by": "Administrator",
  "module": "DSC Custom",
  "name": "DSC Retencion Regla",

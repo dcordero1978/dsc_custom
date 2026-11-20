@@ -19,9 +19,20 @@
     "label": "Retener IR (DGI)",
     "fieldname": "dsc_retencion_ir",
     "fieldtype": "Check",
-    "insert_after": "Payment Entry-dsc_retencion_section",
-    "description": "Aplica la retención de IR definida en DSC Retencion Config (Cobro o Pago). Base: subtotal sin IVA, con descuento aplicado.",
+    "insert_after": "dsc_retencion_section",
+    "description": "Aplica la retención de IR definida en DSC Retencion Config (Cobro o Pago), según su monto mínimo y base de cálculo.",
     "default": "0"
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Payment Entry-dsc_documento_ir",
+    "dt": "Payment Entry",
+    "module": "DSC Custom",
+    "label": "Documento de retención IR",
+    "fieldname": "dsc_documento_ir",
+    "fieldtype": "Attach",
+    "insert_after": "dsc_retencion_ir",
+    "description": "PDF o imagen. Cobro: constancia del cliente (obligatoria si se retiene). Pago: exoneración del proveedor (obligatoria si la factura alcanza el mínimo y no se retiene) o la constancia emitida (opcional)."
   },
   {
     "doctype": "Custom Field",
@@ -31,7 +42,7 @@
     "label": "",
     "fieldname": "dsc_retencion_col",
     "fieldtype": "Column Break",
-    "insert_after": "Payment Entry-dsc_retencion_ir"
+    "insert_after": "dsc_documento_ir"
   },
   {
     "doctype": "Custom Field",
@@ -41,9 +52,20 @@
     "label": "Retener ALMA (Municipal)",
     "fieldname": "dsc_retencion_alma",
     "fieldtype": "Check",
-    "insert_after": "Payment Entry-dsc_retencion_col",
-    "description": "Aplica la retención municipal (ALMA) definida en DSC Retencion Config (Cobro o Pago). Base: subtotal sin IVA, con descuento aplicado.",
+    "insert_after": "dsc_retencion_col",
+    "description": "Aplica la retención municipal (ALMA) definida en DSC Retencion Config (Cobro o Pago), según su monto mínimo y base de cálculo.",
     "default": "0"
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Payment Entry-dsc_documento_alma",
+    "dt": "Payment Entry",
+    "module": "DSC Custom",
+    "label": "Documento de retención ALMA",
+    "fieldname": "dsc_documento_alma",
+    "fieldtype": "Attach",
+    "insert_after": "dsc_retencion_alma",
+    "description": "PDF o imagen. Cobro: constancia de la alcaldía (obligatoria si se retiene). Pago: exoneración del proveedor (obligatoria si la factura alcanza el mínimo y no se retiene) o la constancia emitida (opcional)."
   },
   {
     "doctype": "Custom Field",

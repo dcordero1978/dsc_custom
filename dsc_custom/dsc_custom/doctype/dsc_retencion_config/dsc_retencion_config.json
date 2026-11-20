@@ -25,7 +25,7 @@
    "label": "Reglas de retenci\u00f3n"
   },
   {
-   "description": "Cobro = retenciones que le hacen a la empresa sus clientes (cuenta de ACTIVO acreditable). Pago = retenciones que la empresa hace a sus proveedores (cuenta de PASIVO por enterar). La base de c\u00e1lculo es el subtotal sin IVA, con el descuento aplicado.",
+   "description": "Cobro = retenciones que le hacen a la empresa sus clientes (cuenta de ACTIVO acreditable). Pago = retenciones que la empresa hace a sus proveedores (cuenta de PASIVO por enterar). Monto m\u00ednimo y Base de c\u00e1lculo se eval\u00faan por factura (abra la fila para ver la base).",
    "fieldname": "reglas",
    "fieldtype": "Table",
    "label": "Reglas",
