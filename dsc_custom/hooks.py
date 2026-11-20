@@ -8,15 +8,27 @@ app_license = "mit"
 # JS personalizado por DocType
 doctype_js = {
     "Payment Entry": "public/js/payment_entry.js",
+    "Pricing Rule": "public/js/pricing_rule.js",
 }
 
-# Fixtures — Custom Fields
+# Fixtures — Custom Fields y Property Setters
 fixtures = [
     {
         "doctype": "Custom Field",
         "filters": [["module", "=", "DSC Custom"]],
-    }
+    },
+    {
+        "doctype": "Property Setter",
+        "filters": [["module", "=", "DSC Custom"]],
+    },
 ]
+
+# Margen sobre venta: se convierte a markup equivalente al guardar la Pricing Rule
+doc_events = {
+    "Pricing Rule": {
+        "before_validate": "dsc_custom.pricing.convertir_margen_sobre_venta",
+    },
+}
 
 # Apps
 # ------------------

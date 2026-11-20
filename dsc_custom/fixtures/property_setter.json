@@ -1,0 +1,24 @@
+[
+  {
+    "doctype": "Property Setter",
+    "name": "Pricing Rule-margin_type-options",
+    "doctype_or_field": "DocField",
+    "doc_type": "Pricing Rule",
+    "field_name": "margin_type",
+    "property": "options",
+    "property_type": "Text",
+    "value": "\nPercentage\nAmount\nMargen sobre Venta",
+    "module": "DSC Custom"
+  },
+  {
+    "doctype": "Property Setter",
+    "name": "Pricing Rule-margin_rate_or_amount-precision",
+    "doctype_or_field": "DocField",
+    "doc_type": "Pricing Rule",
+    "field_name": "margin_rate_or_amount",
+    "property": "precision",
+    "property_type": "Select",
+    "value": "6",
+    "module": "DSC Custom"
+  }
+]

@@ -1,0 +1,78 @@
+{
+ "actions": [],
+ "autoname": "field:company",
+ "creation": "2026-11-13 20:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "section_reglas",
+  "reglas"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Empresa",
+   "options": "Company",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "section_reglas",
+   "fieldtype": "Section Break",
+   "label": "Reglas de retenci\u00f3n"
+  },
+  {
+   "description": "Cobro = retenciones que le hacen a la empresa sus clientes (cuenta de ACTIVO acreditable). Pago = retenciones que la empresa hace a sus proveedores (cuenta de PASIVO por enterar). La base de c\u00e1lculo es el subtotal sin IVA, con el descuento aplicado.",
+   "fieldname": "reglas",
+   "fieldtype": "Table",
+   "label": "Reglas",
+   "options": "DSC Retencion Regla"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-11-13 20:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "DSC Custom",
+ "name": "DSC Retencion Config",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accounts Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "Accounts User"
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

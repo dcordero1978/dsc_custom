@@ -16,11 +16,11 @@
     "name": "Payment Entry-dsc_retencion_ir",
     "dt": "Payment Entry",
     "module": "DSC Custom",
-    "label": "Retener IR 2% (DGI)",
+    "label": "Retener IR (DGI)",
     "fieldname": "dsc_retencion_ir",
     "fieldtype": "Check",
     "insert_after": "Payment Entry-dsc_retencion_section",
-    "description": "Marca si el cliente presentó constancia de retención IR 2%. Se calculará sobre el total de la factura.",
+    "description": "Aplica la retención de IR definida en DSC Retencion Config (Cobro o Pago). Base: subtotal sin IVA, con descuento aplicado.",
     "default": "0"
   },
   {
@@ -38,11 +38,25 @@
     "name": "Payment Entry-dsc_retencion_alma",
     "dt": "Payment Entry",
     "module": "DSC Custom",
-    "label": "Retener ALMA 1% (Municipal)",
+    "label": "Retener ALMA (Municipal)",
     "fieldname": "dsc_retencion_alma",
     "fieldtype": "Check",
     "insert_after": "Payment Entry-dsc_retencion_col",
-    "description": "Marca si el cliente retiene el 1% de impuesto municipal (ALMA). Se calculará sobre el total de la factura.",
+    "description": "Aplica la retención municipal (ALMA) definida en DSC Retencion Config (Cobro o Pago). Base: subtotal sin IVA, con descuento aplicado.",
     "default": "0"
+  },
+  {
+    "doctype": "Custom Field",
+    "name": "Pricing Rule-dsc_margen_venta",
+    "dt": "Pricing Rule",
+    "module": "DSC Custom",
+    "label": "Margen sobre venta original (DSC)",
+    "fieldname": "dsc_margen_venta",
+    "fieldtype": "Float",
+    "precision": "6",
+    "insert_after": "margin_rate_or_amount",
+    "hidden": 1,
+    "read_only": 1,
+    "description": "Margen sobre venta que escribió el usuario. La regla se guarda convertida a Porcentaje con el markup equivalente."
   }
 ]
